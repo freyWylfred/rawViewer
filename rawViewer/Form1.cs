@@ -36,8 +36,12 @@ namespace rawViewer
                 int bitDepth = settingsDialog.BitDepth;
                 bool isRGB = settingsDialog.IsRGB;
 
-                int bytesPerSample = bitDepth <= 8 ? 1 : 2;
-                int samplesPerPixel = isRGB ? 3 : 1;
+                // 24bpp = 8 bits/channel x 3 channels (RGB)
+                int effectiveBitDepth = bitDepth == 24 ? 8 : bitDepth;
+                bool effectiveIsRGB = bitDepth == 24 || isRGB;
+
+                int bytesPerSample = effectiveBitDepth <= 8 ? 1 : 2;
+                int samplesPerPixel = effectiveIsRGB ? 3 : 1;
                 int expectedBytes = width * height * bytesPerSample * samplesPerPixel;
 
                 if (rawData.Length < expectedBytes)
@@ -49,10 +53,10 @@ namespace rawViewer
                 }
 
                 _currentBitmap?.Dispose();
-                _currentBitmap = CreateBitmap(rawData, width, height, bitDepth, isRGB);
+                _currentBitmap = CreateBitmap(rawData, width, height, effectiveBitDepth, effectiveIsRGB);
                 DisplayBitmap();
 
-                string colorFormat = isRGB ? "RGB" : "Grayscale";
+                string colorFormat = effectiveIsRGB ? "RGB" : "Grayscale";
                 toolStripStatusLabel1.Text =
                     $"{Path.GetFileName(openFileDialog.FileName)}  |  {width} x {height}  |  {bitDepth} bit  |  {colorFormat}";
                 Text = $"rawViewer - {Path.GetFileName(openFileDialog.FileName)}";

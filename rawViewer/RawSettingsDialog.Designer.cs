@@ -74,11 +74,12 @@ namespace rawViewer
 
             // comboBoxBitDepth
             comboBoxBitDepth.DropDownStyle = ComboBoxStyle.DropDownList;
-            comboBoxBitDepth.Items.AddRange(new object[] { "8", "10", "12", "14", "16" });
+            comboBoxBitDepth.Items.AddRange(new object[] { "8", "10", "12", "14", "16", "24" });
             comboBoxBitDepth.Location = new Point(140, 87);
             comboBoxBitDepth.Name = "comboBoxBitDepth";
             comboBoxBitDepth.Size = new Size(110, 23);
             comboBoxBitDepth.SelectedIndex = 0;
+            comboBoxBitDepth.SelectedIndexChanged += ComboBoxBitDepth_SelectedIndexChanged;
 
             // labelColorFormat
             labelColorFormat.AutoSize = true;

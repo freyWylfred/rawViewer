@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.1.0] - 2026-01-01
+
+### Added
+- 24-bit (24bpp) mode: selecting "24" in Bit Depth automatically locks Format to RGB (8 bits per channel × 3 channels)
+- New test file: `color_256x256_24bpp_rgb.raw`
+
 ## [1.0.0] - 2026-01-01
 
 ### Added

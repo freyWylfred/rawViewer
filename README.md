@@ -62,7 +62,7 @@ Or open `rawViewer.slnx` in Visual Studio 2022 (v17.14+) and press **F5**.
    |-------|-------------|
    | Width | Image width in pixels |
    | Height | Image height in pixels |
-   | Bit Depth | Bits per sample: 8, 10, 12, 14, or 16 |
+   | Bit Depth | Bits per sample: 8, 10, 12, 14, 16, or 24 (24 = 8-bit RGB) |
    | Format | Grayscale (1 sample/pixel) or RGB (3 samples/pixel, interleaved) |
 
 5. Click **OK** to load and display the image.
@@ -79,6 +79,7 @@ Or open `rawViewer.slnx` in Visual Studio 2022 (v17.14+) and press **F5**.
 | 12 bit    | 2 (little-endian) | Right-justified, values 0–4095 normalized to 0–255 |
 | 14 bit    | 2 (little-endian) | Right-justified, values 0–16383 normalized to 0–255 |
 | 16 bit    | 2 (little-endian) | Values 0–65535 normalized to 0–255 |
+| 24 bit    | 3 (8 bits × R, G, B) | Shortcut for 8-bit RGB; Format is locked to RGB |
 
 For **RGB**, samples are stored interleaved: `R G B R G B …`  
 Multi-byte samples use **little-endian** byte order.
@@ -95,6 +96,7 @@ Sample raw files for manual testing are included in `rawViewer/TestFiles/`:
 | `gradient_256x256_16bit_gray.raw` | 256 | 256 | 16 | Grayscale | Diagonal gradient |
 | `color_256x256_8bit_rgb.raw`      | 256 | 256 | 8  | RGB       | R=x, G=y, B=128 color map |
 | `gradient_128x128_12bit_gray.raw` | 128 | 128 | 12 | Grayscale | Full-range 12-bit gradient |
+| `color_256x256_24bpp_rgb.raw`     | 256 | 256 | 24 | RGB       | R=2x, G=2y, B=2(x+y) color map |
 
 ---
 
