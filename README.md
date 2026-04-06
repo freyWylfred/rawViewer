@@ -13,7 +13,7 @@ A lightweight Windows Forms application for viewing raw binary image files built
 - **Open raw binary files** (`.raw`, `.bin`, `.dat`, or any extension)
 - **Configurable image parameters** via dialog at load time:
   - Width and Height (1 – 65535 px)
-  - Bit depth: **8 / 10 / 12 / 14 / 16 bit**
+  - Bit depth: **8 / 10 / 12 / 14 / 16 / 24 bit**
   - Pixel format: **Grayscale** or **RGB** (interleaved)
 - **View modes**: Actual Size (1:1 with scroll) or Fit to Window
 - Status bar shows filename, dimensions, bit depth, and color format
