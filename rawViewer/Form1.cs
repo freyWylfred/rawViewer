@@ -11,6 +11,35 @@ namespace rawViewer
         public Form1()
         {
             InitializeComponent();
+            ApplyTheme();
+        }
+
+        private void ApplyTheme()
+        {
+            var renderer = new DarkToolStripRenderer();
+            menuStrip1.Renderer = renderer;
+            toolStrip1.Renderer = renderer;
+            statusStrip1.Renderer = renderer;
+
+            BackColor = ModernTheme.Background;
+            ForeColor = ModernTheme.TextPrimary;
+            Font = new Font("Segoe UI", 9F, FontStyle.Regular);
+
+            menuStrip1.BackColor = ModernTheme.MenuBar;
+            menuStrip1.ForeColor = ModernTheme.TextPrimary;
+
+            toolStrip1.BackColor = ModernTheme.MenuBar;
+            toolStrip1.ForeColor = ModernTheme.TextPrimary;
+
+            panelMain.BackColor = ModernTheme.Surface;
+
+            statusStrip1.BackColor = ModernTheme.Accent;
+            statusStrip1.ForeColor = Color.White;
+            toolStripStatusLabel1.ForeColor = Color.White;
+
+            labelHint.BackColor = ModernTheme.Surface;
+            labelHint.ForeColor = ModernTheme.TextSecondary;
+            labelHint.BringToFront();
         }
 
         private void OpenToolStripMenuItem_Click(object sender, EventArgs e)
@@ -24,13 +53,18 @@ namespace rawViewer
             if (openFileDialog.ShowDialog() != DialogResult.OK)
                 return;
 
+            LoadFile(openFileDialog.FileName);
+        }
+
+        private void LoadFile(string filePath)
+        {
             using var settingsDialog = new RawSettingsDialog();
             if (settingsDialog.ShowDialog(this) != DialogResult.OK)
                 return;
 
             try
             {
-                byte[] rawData = File.ReadAllBytes(openFileDialog.FileName);
+                byte[] rawData = File.ReadAllBytes(filePath);
                 int width = settingsDialog.ImageWidth;
                 int height = settingsDialog.ImageHeight;
                 int bitDepth = settingsDialog.BitDepth;
@@ -54,18 +88,34 @@ namespace rawViewer
 
                 _currentBitmap?.Dispose();
                 _currentBitmap = CreateBitmap(rawData, width, height, effectiveBitDepth, effectiveIsRGB);
+                labelHint.Visible = false;
                 DisplayBitmap();
 
                 string colorFormat = effectiveIsRGB ? "RGB" : "Grayscale";
                 toolStripStatusLabel1.Text =
-                    $"{Path.GetFileName(openFileDialog.FileName)}  |  {width} x {height}  |  {bitDepth} bit  |  {colorFormat}";
-                Text = $"rawViewer - {Path.GetFileName(openFileDialog.FileName)}";
+                    $"{Path.GetFileName(filePath)}  \u2502  {width} \u00d7 {height}  \u2502  {bitDepth} bit  \u2502  {colorFormat}";
+                Text = $"rawViewer \u2014 {Path.GetFileName(filePath)}";
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to load file.\n{ex.Message}",
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        protected override void OnDragEnter(DragEventArgs e)
+        {
+            e.Effect = e.Data?.GetDataPresent(DataFormats.FileDrop) == true
+                ? DragDropEffects.Copy
+                : DragDropEffects.None;
+            base.OnDragEnter(e);
+        }
+
+        protected override void OnDragDrop(DragEventArgs e)
+        {
+            if (e.Data?.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0)
+                LoadFile(files[0]);
+            base.OnDragDrop(e);
         }
 
         private void DisplayBitmap()
@@ -117,55 +167,84 @@ namespace rawViewer
                 int stride = bitmapData.Stride;
                 byte[] pixels = new byte[stride * height];
                 bool is16bit = bitDepth > 8;
-                int bytesPerSample = is16bit ? 2 : 1;
-                int samplesPerPixel = isRGB ? 3 : 1;
-                int maxValue = (1 << bitDepth) - 1;
 
-                for (int y = 0; y < height; y++)
+                if (!isRGB && !is16bit)
                 {
-                    for (int x = 0; x < width; x++)
+                    // 8-bit grayscale — fast path
+                    Parallel.For(0, height, y =>
                     {
-                        int srcIdx = (y * width + x) * bytesPerSample * samplesPerPixel;
-                        int dstIdx = y * stride + x * 3;
-
-                        byte r, g, b;
-
-                        if (isRGB)
+                        int srcRow = y * width;
+                        int dstRow = y * stride;
+                        for (int x = 0; x < width; x++)
                         {
-                            if (!is16bit)
-                            {
-                                r = data[srcIdx];
-                                g = data[srcIdx + 1];
-                                b = data[srcIdx + 2];
-                            }
-                            else
-                            {
-                                int rv = BitConverter.ToUInt16(data, srcIdx) & maxValue;
-                                int gv = BitConverter.ToUInt16(data, srcIdx + 2) & maxValue;
-                                int bv = BitConverter.ToUInt16(data, srcIdx + 4) & maxValue;
-                                r = (byte)(rv * 255 / maxValue);
-                                g = (byte)(gv * 255 / maxValue);
-                                b = (byte)(bv * 255 / maxValue);
-                            }
+                            byte v = data[srcRow + x];
+                            int di = dstRow + x * 3;
+                            pixels[di] = v;
+                            pixels[di + 1] = v;
+                            pixels[di + 2] = v;
                         }
-                        else
+                    });
+                }
+                else if (isRGB && !is16bit)
+                {
+                    // 8-bit RGB → BGR swap
+                    Parallel.For(0, height, y =>
+                    {
+                        int srcRow = y * width * 3;
+                        int dstRow = y * stride;
+                        for (int x = 0; x < width; x++)
                         {
-                            if (!is16bit)
-                            {
-                                r = g = b = data[srcIdx];
-                            }
-                            else
-                            {
-                                int v = BitConverter.ToUInt16(data, srcIdx) & maxValue;
-                                byte gray = (byte)(v * 255 / maxValue);
-                                r = g = b = gray;
-                            }
+                            int si = srcRow + x * 3;
+                            int di = dstRow + x * 3;
+                            pixels[di] = data[si + 2];
+                            pixels[di + 1] = data[si + 1];
+                            pixels[di + 2] = data[si];
                         }
+                    });
+                }
+                else
+                {
+                    // 16-bit paths — pre-compute lookup table
+                    int maxValue = (1 << bitDepth) - 1;
+                    byte[] lut = new byte[maxValue + 1];
+                    for (int i = 0; i <= maxValue; i++)
+                        lut[i] = (byte)(i * 255 / maxValue);
 
-                        // Format24bppRgb stores pixels in BGR order in memory
-                        pixels[dstIdx] = b;
-                        pixels[dstIdx + 1] = g;
-                        pixels[dstIdx + 2] = r;
+                    if (!isRGB)
+                    {
+                        // 16-bit grayscale
+                        Parallel.For(0, height, y =>
+                        {
+                            int srcRow = y * width * 2;
+                            int dstRow = y * stride;
+                            for (int x = 0; x < width; x++)
+                            {
+                                int si = srcRow + x * 2;
+                                int v = BitConverter.ToUInt16(data, si) & maxValue;
+                                byte gray = lut[v];
+                                int di = dstRow + x * 3;
+                                pixels[di] = gray;
+                                pixels[di + 1] = gray;
+                                pixels[di + 2] = gray;
+                            }
+                        });
+                    }
+                    else
+                    {
+                        // 16-bit RGB → BGR swap
+                        Parallel.For(0, height, y =>
+                        {
+                            int srcRow = y * width * 6;
+                            int dstRow = y * stride;
+                            for (int x = 0; x < width; x++)
+                            {
+                                int si = srcRow + x * 6;
+                                int di = dstRow + x * 3;
+                                pixels[di] = lut[BitConverter.ToUInt16(data, si + 4) & maxValue];
+                                pixels[di + 1] = lut[BitConverter.ToUInt16(data, si + 2) & maxValue];
+                                pixels[di + 2] = lut[BitConverter.ToUInt16(data, si) & maxValue];
+                            }
+                        });
                     }
                 }
 
