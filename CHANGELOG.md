@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.2.0] - 2026-01-07
+
+### Added
+- Modern dark UI theme inspired by VS Code (dark background, accent blue highlights)
+- Toolbar with Open / 1:1 / Fit buttons for quick access
+- Drag-and-drop file loading (drop a RAW file directly onto the window)
+- Hint overlay ("Drop a RAW file here or press Ctrl+O") when no image is loaded
+- Redesigned Image Settings dialog with header panel and accent line
+
+### Changed
+- Significantly improved rendering performance using parallel processing (Parallel.For)
+- Optimized CreateBitmap with 4 specialized code paths (8-bit gray, 8-bit RGB, 16-bit gray, 16-bit RGB)
+- Added lookup table (LUT) for 16-bit to 8-bit conversion, eliminating per-pixel division
+
 ## [1.1.0] - 2026-01-01
 
 ### Added
